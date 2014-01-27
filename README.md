@@ -1,61 +1,23 @@
-Japanese (kuromoji) Analysis for ElasticSearch
+Japanese (kuromoji) Analysis for Elasticsearch
 ==================================
 
 The Japanese (kuromoji) Analysis plugin integrates Lucene kuromoji analysis module into elasticsearch.
 
-In order to install the plugin, simply run: `bin/plugin -install elasticsearch/elasticsearch-analysis-kuromoji/1.6.0`.
+In order to install the plugin, simply run: `bin/plugin -install elasticsearch/elasticsearch-analysis-kuromoji/2.0.0.RC1`.
 
-<table>
-	<thead>
-		<tr>
-			<td>Kuromoji Analysis Plugin</td>
-			<td>Elasticsearch</td>
-			<td>Release date</td>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td>1.7.0-SNAPSHOT (master)</td>
-			<td>0.90.6 -> master</td>
-			<td></td>
-		</tr>
-		<tr>
-			<td>1.6.0</td>
-			<td>0.90.6 -> master</td>
-			<td>2013-11-06</td>
-		</tr>
-		<tr>
-			<td>1.5.0</td>
-			<td>0.90.3 -> 0.90.5</td>
-			<td>2013-08-08</td>
-		</tr>
-		<tr>
-			<td>1.4.0</td>
-			<td>0.90.1 -> 0.90.2</td>
-			<td>2013-05-30</td>
-		</tr>
-		<tr>
-			<td>1.3.0</td>
-			<td>0.90.0</td>
-			<td>2013-04-29</td>
-		</tr>
-		<tr>
-			<td>1.2.0</td>
-			<td>0.90.0</td>
-			<td>2013-02-26</td>
-		</tr>
-		<tr>
-			<td>1.1.0</td>
-			<td>0.19.2 -> 0.20</td>
-			<td>2012-11-21</td>
-		</tr>
-		<tr>
-			<td>1.0.0</td>
-			<td>0.19.0 -> 0.19.1</td>
-			<td>2012-04-30</td>
-		</tr>
-	</tbody>
-</table>
+|  Kuromoji Analysis Plugin   |    elasticsearch    | Release date |
+|-----------------------------|---------------------|:------------:|
+| 2.0.0-SNAPSHOT (master)     | 1.0.0.RC1 -> master |              |
+| 2.0.0.RC1                   | 1.0.0.RC1 -> master |  2014-01-15  |
+| 1.8.0-SNAPSHOT (1.x)        | 0.90.8 -> 0.90      |              |
+| 1.7.0                       | 0.90.8 -> 0.90      |  2013-12-20  |
+| 1.6.0                       | 0.90.6 -> 0.90.7    |  2013-11-06  |
+| 1.5.0                       | 0.90.3 -> 0.90.5    |  2013-08-08  |
+| 1.4.0                       | 0.90.1 -> 0.90.2    |  2013-05-30  |
+| 1.3.0                       | 0.90.0              |  2013-04-29  |
+| 1.2.0                       | 0.90.0              |  2013-02-26  |
+| 1.1.0                       | 0.19.2 -> 0.20      |  2012-11-21  |
+| 1.0.0                       | 0.19.0 -> 0.19.1    |  2012-04-30  |
 
 The plugin includes the `kuromoji` analyzer.
 
@@ -66,6 +28,7 @@ The plugin includes these analyzer and tokenizer, tokenfilter.
 
 | name                    | type        |
 |-------------------------|-------------|
+| kuromoji_iteration_mark | charfilter  |
 | kuromoji                | analyzer    |
 | kuromoji_tokenizer      | tokenizer   |
 | kuromoji_baseform       | tokenfilter |
@@ -89,6 +52,18 @@ This analyzer is the following tokenizer and tokenfilter combination.
 * `stop` : Stop Filter (TokenFilter)
 * `kuromoji_stemmer` : Kuromiji Katakana Stemmer Filter(TokenFilter)
 * `lowercase` : LowerCase Filter (TokenFilter)
+
+## CharFilter : kuromoji_iteration_mark
+
+A charfilter of type `kuromoji_iteration_mark`.
+This charfilter is Normalizes Japanese horizontal iteration marks (odoriji) to their expanded form.
+
+The following ar setting that can be set for a `kuromoji_iteration_mark` charfilter type:
+
+| **Setting**     | **Description**                                              | **Default value** |
+|:----------------|:-------------------------------------------------------------|:------------------|
+| normalize_kanji | indicates whether kanji iteration marks should be normalized | `true`            |
+| normalize_kana  | indicates whether kanji iteration marks should be normalized | `true`            |
 
 ## Tokenizer : kuromoji_tokenizer
 
@@ -143,7 +118,7 @@ User Dictionary file is placed `ES_HOME/config` directory.
 
 ### example
 
-```
+```sh
 curl -XPUT 'http://localhost:9200/kuromoji_sample/' -d'
 {
     "index":{
@@ -193,7 +168,7 @@ This acts as a lemmatizer for verbs and adjectives.
 
 ### example
 
-```
+```sh
 curl -XPUT 'http://localhost:9200/kuromoji_sample/' -d'
 {
     "index":{
@@ -235,7 +210,7 @@ Note that default setting is stoptags.txt include lucene-analyzer-kuromji.jar.
 
 ### example
 
-```
+```sh
 curl -XPUT 'http://localhost:9200/kuromoji_sample/' -d'
 {
     "index":{
@@ -293,7 +268,7 @@ Note that elasticsearch-analysis-kuromoji built-in `kuromoji_readingform` set de
 
 ### example
 
-```
+```sh
 curl -XPUT 'http://localhost:9200/kuromoji_sample/' -d'
 {
     "index":{
@@ -361,7 +336,7 @@ The following are settings that can be set for a `kuromoji_stemmer` token filter
 
 ### example
 
-```
+```sh
 curl -XPUT 'http://localhost:9200/kuromoji_sample/' -d'
 {
     "index":{
@@ -412,7 +387,7 @@ License
 
     This software is licensed under the Apache 2 license, quoted below.
 
-    Copyright 2009-2013 Shay Banon and ElasticSearch <http://www.elasticsearch.org>
+    Copyright 2009-2014 Elasticsearch <http://www.elasticsearch.org>
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not
     use this file except in compliance with the License. You may obtain a copy of

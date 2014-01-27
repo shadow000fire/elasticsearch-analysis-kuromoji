@@ -1,11 +1,11 @@
 /*
- * Licensed to ElasticSearch and Shay Banon under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. ElasticSearch licenses this
- * file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  *    http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -37,18 +37,18 @@ import org.elasticsearch.index.settings.IndexSettingsModule;
 import org.elasticsearch.indices.analysis.IndicesAnalysisModule;
 import org.elasticsearch.indices.analysis.IndicesAnalysisService;
 import org.elasticsearch.plugin.analysis.kuromoji.AnalysisKuromojiPlugin;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.elasticsearch.test.ElasticsearchTestCase;
+import org.junit.Test;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.*;
 
 /**
  */
-public class KuromojiAnalysisTests {
+public class KuromojiAnalysisTests extends ElasticsearchTestCase {
 
     @Test
     public void testDefaultsKuromojiAnalysis() throws IOException {
@@ -75,6 +75,9 @@ public class KuromojiAnalysisTests {
         analyzer = analysisService.analyzer("my_analyzer");
         assertThat(analyzer.analyzer(), instanceOf(CustomAnalyzer.class));
         assertThat(analyzer.analyzer().tokenStream(null, new StringReader("")), instanceOf(JapaneseTokenizer.class));
+
+        CharFilterFactory  charFilterFactory = analysisService.charFilter("kuromoji_iteration_mark");
+        assertThat(charFilterFactory, instanceOf(KuromojiIterationMarkCharFilterFactory.class));
     }
 
     @Test
@@ -130,6 +133,41 @@ public class KuromojiAnalysisTests {
         expected_tokens_katakana = new String[]{"明後日", "パーティー", "に", "行く", "予定", "が", "ある", "図書館", "で", "資料", "を", "コピー", "し", "まし", "た"};
         assertSimpleTSOutput(tokenFilter.create(tokenizer), expected_tokens_katakana);
     }
+    @Test
+    public void testIterationMarkCharFilter() throws IOException {
+        AnalysisService analysisService = createAnalysisService();
+        // test only kanji
+        CharFilterFactory charFilterFactory = analysisService.charFilter("kuromoji_im_only_kanji");
+        assertNotNull(charFilterFactory);
+        assertThat(charFilterFactory, instanceOf(KuromojiIterationMarkCharFilterFactory.class));
+
+        String source = "ところゞゝゝ、ジヾが、時々、馬鹿々々しい";
+        String expected = "ところゞゝゝ、ジヾが、時時、馬鹿馬鹿しい";
+
+        assertCharFilterEquals(charFilterFactory.create(new StringReader(source)), expected);
+
+        // test only kana
+
+        charFilterFactory = analysisService.charFilter("kuromoji_im_only_kana");
+        assertNotNull(charFilterFactory);
+        assertThat(charFilterFactory, instanceOf(KuromojiIterationMarkCharFilterFactory.class));
+
+        expected = "ところどころ、ジジが、時々、馬鹿々々しい";
+
+        assertCharFilterEquals(charFilterFactory.create(new StringReader(source)), expected);
+
+        // test default
+
+        charFilterFactory = analysisService.charFilter("kuromoji_im_default");
+        assertNotNull(charFilterFactory);
+        assertThat(charFilterFactory, instanceOf(KuromojiIterationMarkCharFilterFactory.class));
+
+        expected = "ところどころ、ジジが、時時、馬鹿馬鹿しい";
+
+        assertCharFilterEquals(charFilterFactory.create(new StringReader(source)), expected);
+
+
+    }
 
     public AnalysisService createAnalysisService() {
         Settings settings = ImmutableSettings.settingsBuilder().loadFromClasspath("org/elasticsearch/index/analysis/kuromoji_analysis.json").build();
@@ -157,12 +195,28 @@ public class KuromojiAnalysisTests {
                                             String[] expected) throws IOException {
         stream.reset();
         CharTermAttribute termAttr = stream.getAttribute(CharTermAttribute.class);
-        Assert.assertNotNull(termAttr);
+        assertThat(termAttr, notNullValue());
         int i = 0;
         while (stream.incrementToken()) {
-            Assert.assertTrue(i < expected.length);
-            Assert.assertEquals(expected[i++], termAttr.toString(), "expected different term at index " + i);
+            assertThat(expected.length, greaterThan(i));
+            assertThat( "expected different term at index " + i, expected[i++], equalTo(termAttr.toString()));
         }
-        Assert.assertEquals(i, expected.length, "not all tokens produced");
+        assertThat("not all tokens produced", i, equalTo(expected.length));
     }
+
+    private void assertCharFilterEquals(Reader filtered,
+                                        String expected) throws IOException {
+        String actual = readFully(filtered);
+        assertThat(actual, equalTo(expected));
+    }
+
+    private String readFully(Reader reader) throws IOException {
+        StringBuilder buffer = new StringBuilder();
+        int ch;
+        while((ch = reader.read()) != -1){
+            buffer.append((char)ch);
+        }
+        return buffer.toString();
+    }
+
 }
